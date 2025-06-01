@@ -1,7 +1,6 @@
-# Используем официальный PHP-образ с Apache
 FROM php:8.2-apache
 
-# Устанавливаем системные зависимости и расширения PHP
+# Установка системных зависимостей и PHP-расширений, включая SQLite
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -10,28 +9,31 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql zip
+    sqlite3 libsqlite3-dev \
+    && docker-php-ext-install pdo pdo_sqlite zip mbstring xml
 
-# Включаем mod_rewrite для Laravel маршрутов
+# Включаем Apache модуль rewrite
 RUN a2enmod rewrite
 
-# Устанавливаем Composer
+# Копируем Composer из официального образа
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Копируем проект внутрь контейнера
+# Копируем проект в контейнер
 COPY . /var/www/html
 
-# Задаём рабочую директорию
 WORKDIR /var/www/html
 
-# Устанавливаем зависимости Laravel
+# Установка PHP-зависимостей проекта
 RUN composer install --no-dev --optimize-autoloader
 
 # Генерируем ключ приложения
 RUN php artisan key:generate
 
-# Даём нужные права для кэшей
+# Создаем пустую SQLite базу, если ее нет (можно не обязательно, если уже есть)
+RUN php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
+
+# Правильно задаем права на папки для Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Указываем порт, который будет использовать Apache
+# Открываем порт 80 для Apache
 EXPOSE 80
