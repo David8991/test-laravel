@@ -11,6 +11,8 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
+      - key: APP_KEY
+        value: base64:+cQkeBW1ucuD0Yv24Wgn9odIWph+GZMb82Km2SWU3tQ=
       - key: DB_CONNECTION
         value: sqlite
       - key: DB_DATABASE
